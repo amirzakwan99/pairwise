@@ -18,7 +18,16 @@ class GroupController extends Controller
 
     public function index(Request $request)
     {
-        return response()->json(['data' => Group::where('created_by', $request->user()->id)->whereHas('memberships', fn ($q) => $q->where('user_id', $request->user()->id)->where('role', 'owner')->whereNull('left_at'))->orderByDesc('created_at')->orderBy('id')->get()]);
+        $accountId = $request->user()->id;
+
+        return response()->json(['data' => Group::whereHas('memberships', function ($q) use ($accountId) {
+            $q->whereNull('left_at')->where(function ($q) use ($accountId) {
+                $q->where('account_user_id', $accountId)->orWhere(function ($q) use ($accountId) {
+                    $q->where('user_id', $accountId)->where('role', 'owner')
+                        ->whereHas('group', fn ($q) => $q->where('created_by', $accountId));
+                });
+            });
+        })->orderByDesc('created_at')->orderBy('id')->get()]);
     }
 
     public function store(GroupRequest $request)

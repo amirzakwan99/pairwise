@@ -1,6 +1,6 @@
 # Pairwise — shared group expenses
 
-A Laravel API and React app for personal groups, built from the MVP specification in `personal-expense-debt-spec/`. Register as a creator, create a group with optional member names (added one at a time), add further participants by name with optional contact email, and record equal or custom expenses. Participants do not need accounts or login. The dashboard shows expense totals, saved shares, and who pays whom. Only the original group creator can access the group and manage its participants and expenses, including expenses paid by other people.
+A Laravel API and React app for personal groups, built from the MVP specification in `personal-expense-debt-spec/`. Register as a creator, create a group with optional member names (added one at a time), add further participants by name with optional contact email, and record equal or custom expenses. Participants do not need accounts or login. The dashboard shows expense totals, saved shares, and who pays whom. Invited members can register or log in, select their existing name and view the group or add/edit expenses. Only the creator manages participants, invitations and group settings, and deletes expenses/groups. See [invitation instructions](docs/invitations.md).
 
 ## Verified versions
 
@@ -94,7 +94,7 @@ This isolated development server uses an empty-password local root account. For 
 
 ### Upgrading an existing installation
 
-Run `php artisan migrate` before using name-only participants. The additive migration makes identity email/password nullable and adds membership contact email; it preserves existing IDs, expense shares and debts. Existing registered member rows remain available as historical participants, but only the original group creator can access each group. New participants are always group-local guests, even if their contact email matches a registered account. Guest credentials remain null and cannot authenticate. Registration still requires email and password for creators.
+Run `php artisan migrate` before using name-only participants. The additive migration makes identity email/password nullable and adds membership contact email; it preserves existing IDs, expense shares and debts. Existing registered member rows remain available as historical participants, but legacy membership alone does not grant access; joining requires a creator-issued invitation. New participants are always group-local guests, even if their contact email matches a registered account. Guest credentials remain null and cannot authenticate. Registration requires email and password for all login accounts. Run migrations for invitation/account-link support as well; claiming a name preserves historical IDs.
 
 Once guest identities exist, rolling back this migration would require non-null credentials and is intentionally refused. Restore a pre-migration backup if a schema rollback is required; do not delete guests or invent login credentials to force it.
 
@@ -132,7 +132,7 @@ SettlementService accumulates each non-payer share as participant → payer and 
 
 The corrected fixture (Dinner 120 by Amir, Grab 60 by Ali, Drinks 30 by Abu, equal shares) gives Ali → Amir **20.00**, Abu → Amir **30.00**, Abu → Ali **10.00**. Hotel is additional seed data and changes those amounts. Tests keep the corrected fixture separate from the seed.
 
-Creator removal marks participants inactive while preserving historical expenses, shares and debts. Only active participants can be selected on new or replacement expenses. Adding a removed name reactivates the same identity and membership. Duplicate active names are rejected case-insensitively within each group. The creator cannot be removed; ownership transfer is deferred. Participants have no self-service leave flow. A group deletion cascades its complete history. Group locks serialize membership and expense writes, and full-form PATCH replaces shares atomically. Expense access and edit rights belong exclusively to the original group creator, independently of expense authorship or payer. Optional contact emails never link accounts or confer access.
+Creator removal marks participants inactive while preserving historical expenses, shares and debts. Only active participants can be selected on new or replacement expenses. Adding a removed name reactivates the same identity and membership. Duplicate active names are rejected case-insensitively within each group. The creator cannot be removed; ownership transfer is deferred. Participants have no self-service leave flow. A group deletion cascades its complete history. Group locks serialize membership and expense writes, and full-form PATCH replaces shares atomically. Expense access and add/edit rights belong to the creator and active accounts explicitly linked by invitation, independently of authorship or payer. Expense deletion remains creator-only. Optional contact emails never link accounts or confer access.
 
 See [the shared contract](personal-expense-debt-spec/03-shared-contracts.md) and [API route map](personal-expense-debt-spec/08-api.md). API resources use `{data: ...}`, except settlements use `{currency, settlements}`. Expense lists support `sort=date|amount|description` and `direction=asc|desc`, with ID tie-breaking.
 
@@ -165,4 +165,4 @@ Deploy on Linux with Nginx, PHP-FPM 8.3+ and MySQL 8+. Serve the React build and
 
 For updates, install from lockfiles, build a new frontend artifact, run the required checks, back up the database, apply migrations and refresh Laravel caches. No worker, scheduler or optional external service is required for this MVP. See [verification notes](docs/verification.md) for checks actually run. Production Nginx/TLS deployment must be verified on the target Linux server.
 
-PWA, payments/mark-paid, settlement history, invitation links, percentage splits, conversion and the rest of `12-future-features.md` remain deferred.
+PWA, payments/mark-paid, settlement history, percentage splits, conversion and the rest of `12-future-features.md` remain deferred.

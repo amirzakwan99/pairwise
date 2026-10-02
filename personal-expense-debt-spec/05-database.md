@@ -26,6 +26,8 @@ id
 name
 created_by
 currency
+invite_token_hash (nullable, unique, hidden from group responses)
+invite_expires_at (nullable)
 created_at
 updated_at
 ```
@@ -45,6 +47,7 @@ user_id
 role (owner/member)
 left_at (nullable)
 contact_email (nullable)
+account_user_id (nullable foreign key to registered users)
 created_at
 updated_at
 ```
@@ -53,6 +56,7 @@ Add a unique constraint:
 
 ```text
 group_id + user_id
+group_id + account_user_id (nullable account links)
 ```
 
 ## expenses

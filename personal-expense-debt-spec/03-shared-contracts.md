@@ -4,7 +4,7 @@ Read this before implementing any component. This file owns cross-component inte
 
 ## Creator-managed groups (updated 2026-10-02)
 
-The current user request replaces registered-account membership and member self-service. Only the original group creator logs in and manages that group. Other people are named participants; email is optional contact information and grants no access. The rules below reflect this change.
+The creator can add name-only participants and invite them to register or log in and claim their existing name. Joined active members can view the group and add/edit any expense. The creator alone manages members, invitations, group settings and deletion, including expense deletion. Email alone grants no access.
 
 ## Money, identity and calculation
 
@@ -25,11 +25,12 @@ The base tables and fields in 05-database.md are retained with these additions:
 | Table | Addition | Purpose |
 | --- | --- | --- |
 | users | nullable email and password for guest identities | Named participants without login accounts; registered creators still require credentials |
-| group_members | role: owner/member; nullable left_at and contact_email | Creator ownership, optional contact information and membership history |
+| group_members | role: owner/member; nullable left_at, contact_email and account_user_id | Creator ownership, optional contacts, linked login accounts and membership history |
+| groups | nullable invite_token_hash and invite_expires_at | One rotating/revocable invitation, expiring after seven days |
 | expenses | created_by ULID foreign key; nullable deleted_at | Identify the author independently of the payer; soft deletion |
 | expense_splits | unique(expense_id, user_id) | Prevent duplicate participants |
 
-Exactly one active owner per group. groups.created_by is the original creator and immutable; access requires both that creator ID and an active owner membership. The member role identifies a participant and grants no access. Creating a group inserts its owner membership atomically. Preserve user and membership identities referenced by historical expenses. Index membership lookups, expense group/date queries and split expense/user lookups; use foreign keys and transactional writes.
+Exactly one active owner per group. groups.created_by is the original creator and immutable; owner access requires that creator ID and an active owner membership. Other accounts require an active membership explicitly linked through an invitation. Legacy registered membership and contact email alone grant no access. Creating a group inserts its owner membership atomically. Preserve user and membership identities referenced by historical expenses. Index membership lookups, expense group/date queries and split expense/user lookups; use foreign keys and transactional writes.
 
 Migrations must create users, groups, group_members, expenses, then expense_splits; rollback in reverse. Roles and split types must match API validation and TypeScript unions. MVP split types are exactly equal/custom.
 
@@ -39,11 +40,13 @@ Existing installations use an additive migration to make identity email/password
 
 - Use Sanctum stateful SPA cookie/session authentication. Fetch /sanctum/csrf-cookie before authenticated writes, include credentials and the XSRF header, configure stateful domains, CORS and cookies, and require CSRF protection. Do not mix this with personal access tokens or localStorage tokens.
 - Prefer one public origin in production: Nginx routes /api and /sanctum to Laravel and serves the React build. During development use a Vite proxy or an explicitly configured same-site Sanctum setup. Confirm register/login/me/logout before UI integration.
-- Only the group creator may view the group, members, expenses, summaries and settlements; rename/delete the group; add/remove participants; and create/edit/delete every expense. Payer, participant, optional email, original expense authorship and legacy registered membership never grant access.
-- Add members with required name and optional email. New participants receive group-local guest identities (ULID user rows with null email/password); optional email is stored on group_members.contact_email. Never look up or link a registered account by that email, create passwords, send email or invite someone. Reject duplicate active names case-insensitively within a group. The same name in another group receives a separate identity.
+- The creator and invited, linked active accounts may view the group, members, expenses, summaries and settlements and create/edit every expense. Only the creator may rename/delete the group, manage participants/invitations and delete expenses. Payer, participant, optional email, original expense authorship and legacy registered membership alone never grant access.
+- Add members with required name and optional email. New participants receive group-local guest identities (ULID user rows with null email/password); optional email is stored on group_members.contact_email. Never look up or link a registered account by that email or generate guest passwords. Reject duplicate active names case-insensitively within a group. The same name in another group receives a separate identity.
+- The creator generates a random 256-bit invitation link, valid for seven days and shared manually. Store only its SHA-256 hash; rotation invalidates the previous link and revocation stops new joins. Existing joined members remain linked. Invitation preview/join require authentication and a valid token. Preview exposes only group ID/name and eligible participant IDs/names, excluding owner, former, claimed and legacy registered identities.
+- A joining account selects an unclaimed active guest name. Atomically set account_user_id to the authenticated account ID and contact_email to its login email. Preserve membership user_id, guest name, guest null credentials, payers and splits. One account may claim one identity per group; one identity may be claimed once. Serialize claims and invitation rotation/revocation with the group lock; recheck expiry/token after locking. No inferred access from matching names/emails. The holder of an invitation can choose any eligible name; the creator shares links only with trusted group participants.
 - Creator removal sets left_at without deleting historical identities, shares or debts. The creator still sees historical debts involving former participants. Only active members can be selected on new or replacement expenses. Adding a previously removed name reactivates the same identity and membership as member; an omitted email retains its previous contact email. There is no participant self-service leave flow.
 - The creator cannot be removed in MVP; ownership transfer is deferred. The owner may delete the group. Member lists include former members with active=false so historical names remain available; selection controls show active members only.
-- Scope every nested expense/member query to its group and apply policies. Do not authorize solely from a client-provided group/user ID. Every non-creator request is unauthorized, including requests from registered legacy members and former participants.
+- Scope every nested expense/member query to its group and apply policies. Do not authorize solely from a client-provided group/user ID. Unlinked accounts, registered legacy members and inactive participants cannot access the group. Removing a linked member immediately revokes group access; re-adding their name retains the account link and restores access without changing history.
 - Group deletion removes the whole group and its expenses/splits/members atomically. Expense deletion uses soft deletes and excludes the deleted expense and its splits from all calculations.
 
 ## API interface owned here
@@ -55,6 +58,10 @@ All IDs are strings, amounts are decimal strings, names/descriptions are strings
 | GET | /sanctum/csrf-cookie | Initialize SPA CSRF cookie |
 | PATCH | /api/auth/password | Change current user's password |
 | GET | /api/groups/{group}/summary | Return group/member totals |
+| POST | /api/groups/{group}/invitation | Creator generates/replaces link; returns data.token and data.expires_at |
+| DELETE | /api/groups/{group}/invitation | Creator revokes link; returns 204 |
+| GET | /api/invitations/{token} | Authenticated preview: data.group (id/name), data.members (id/name) |
+| POST | /api/invitations/{token}/join | Body member_id (participant ULID); returns 201 data.group_id and data.member |
 
 Register payload: name, email, password, password_confirmation. Login: email, password. Password change: current_password, password, password_confirmation. Group create: name, optional currency (MYR), and optional member_names (a list of nonblank names, each at most 255 characters); rename: name only. Add member: name (required) and email (optional, nullable).
 
@@ -82,11 +89,13 @@ The settlement endpoint intentionally keeps the existing top-level {"currency": 
 
 Use 200 for reads/updates/login/password changes, 201 for creates/register, 204 with no JSON body for logout/deletes; 401 unauthenticated, 403 unauthorized, 404 missing or wrong-group resource, 422 validation and 429 throttled. Validation errors use the existing {message, errors} shape; other errors have message. Handle session/CSRF expiry with actionable frontend feedback.
 
-GET expenses accepts sort=date|amount|description and direction=asc|desc; default date descending, with ID as a stable tie-breaker. No pagination is required for the small-group MVP. GET members includes active and former members; GET groups lists only groups created by the authenticated user with an active owner membership.
+Member responses additionally include nullable account_user_id (the owner account ID for owners, or the invited account ID for linked members). guest is false for a linked member. Auth user IDs and participant IDs can differ: frontend maps the session account through account_user_id for personal balances, payer defaults, '(you)' labels and expense authorship. Backend amounts and settlement IDs remain participant-based.
+
+GET expenses accepts sort=date|amount|description and direction=asc|desc; default date descending, with ID as a stable tie-breaker. No pagination is required for the small-group MVP. GET members includes active and former members; GET groups lists created groups with active owner membership and joined groups with active linked membership. Invalid, expired and revoked invitation tokens return 404; claimed/already-linked conflicts return 422; unauthenticated requests return 401.
 
 ## Corrections to source examples
 
 - Source section 32 had a reversed Amir/Ali result. Dinner 120 paid by Amir, Grab 60 paid by Ali and Drinks 30 paid by Abu produce **Ali → Amir 20.00**, **Abu → Amir 30.00**, **Abu → Ali 10.00**. The split files correct both occurrences.
 - Source section 13 said both Ali and Abu pay each other 25.00. With its stated example debts, Abu **receives** 25.00 from Ali. The UI example is corrected.
 - UI examples in separate sections describe independent illustrative scenarios. Do not combine their figures into one fixture. Test the exact three-expense fixture above separately from seed data that also includes Hotel.
-- Invite links, percentage splits, settlement history, "mark paid" and PWA are post-MVP. Creator-managed named participants, equal/custom splits and read-only pairwise settlements form the MVP.
+- Invitation links and account claims are now explicitly requested scope. Percentage splits, settlement history, "mark paid" and PWA remain deferred. Named participants, invited accounts, equal/custom splits and read-only pairwise settlements form the current scope.

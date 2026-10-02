@@ -13,7 +13,7 @@ class GroupMember extends Model
 {
     use HasFactory, HasUlids;
 
-    protected $fillable = ['group_id', 'user_id', 'role', 'left_at', 'contact_email'];
+    protected $fillable = ['group_id', 'user_id', 'role', 'left_at', 'contact_email', 'account_user_id'];
 
     protected function casts(): array
     {
@@ -23,5 +23,10 @@ class GroupMember extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
     }
 }

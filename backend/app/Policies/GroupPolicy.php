@@ -11,7 +11,8 @@ class GroupPolicy
 {
     public function view(User $user, Group $group): bool
     {
-        return $this->update($user, $group);
+        return $this->update($user, $group)
+            || $group->memberships()->where('account_user_id', $user->id)->whereNull('left_at')->exists();
     }
 
     public function update(User $user, Group $group): bool

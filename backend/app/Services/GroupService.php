@@ -63,7 +63,7 @@ class GroupService
                 throw ValidationException::withMessages(['name' => 'This name is already an active member of this group.']);
             }
             if ($existing) {
-                $existing->update(['left_at' => null, 'role' => 'member', 'contact_email' => $email ?? $existing->contact_email]);
+                $existing->update(['left_at' => null, 'role' => 'member', 'contact_email' => $existing->account_user_id ? $existing->contact_email : ($email ?? $existing->contact_email)]);
             } else {
                 // A guest is a group-local identity for saved shares, not a login account.
                 // Contact emails live on membership so they cannot reserve/claim a login.

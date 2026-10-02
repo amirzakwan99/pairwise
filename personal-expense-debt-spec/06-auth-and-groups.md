@@ -4,7 +4,7 @@ Read [README.md](README.md) first. Shared interfaces and resolved decisions are 
 
 ## Source section 20: Authentication
 
-Only group creators need accounts and authentication. Named participants require neither registration nor login.
+Creators and invited participants can register and log in. Named participants can remain without accounts until they choose to join through an invitation.
 
 MVP authentication:
 
@@ -41,7 +41,7 @@ Add members
 Remove members
 ```
 
-The create-group form includes optional member names, added one at a time, and automatically includes the creator. Save the group and initial participants atomically. The creator can also add participants later by name, with an optional contact email. No registered account lookup, linking or invitation occurs. Participants never need to log in. Removing and re-adding a name preserves historical identity and debts; see 03-shared-contracts.md.
+The create-group form includes optional member names, added one at a time, and automatically includes the creator. Save the group and initial participants atomically. The creator can also add participants later by name, with an optional contact email. No account lookup or linking occurs when merely adding a name/contact email. Participants may later use a creator-issued invitation to link their own account. Removing and re-adding a name preserves historical identity and debts; see 03-shared-contracts.md.
 
 ---
 
@@ -56,13 +56,13 @@ member
 
 Only the original group creator can:
 
-- View group, members, expenses, summary and settlements
 - Rename group
 - Add/remove members
+- Generate/replace/revoke invitations
 - Delete group
-- Manage expenses
+- Delete expenses
 
-Named participants can be selected as payers and included in equal/custom expense shares. They have no app access or mutation permissions. The creator records expenses even when someone else paid. Existing registered members also lose access to groups created by someone else.
+Named participants can be selected as payers and included in equal/custom expense shares. After joining by invitation and selecting an unclaimed name, active linked accounts can view the group and add/edit all expenses. The selected member's contact email becomes the account email, while historical identity and debts stay unchanged. Existing registered membership alone grants no access. See 03-shared-contracts.md and ../docs/invitations.md for invitation lifecycle and claim rules.
 
 Keep authorization simple.
 
@@ -81,7 +81,7 @@ Implement:
 - SQL injection protection through Laravel ORM/query builder
 - Rate limiting for authentication endpoints
 
-Authenticated users must only be able to access groups they created. Being a participant or matching an optional email must never grant access.
+Authenticated users can access groups they created or explicitly joined through an invitation while their membership is active. Being a named participant or matching an optional email alone never grants access.
 
 Users must not be able to modify another group's data by changing an ID in the request.
 

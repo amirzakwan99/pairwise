@@ -15,6 +15,13 @@ class Group extends Model
 
     protected $fillable = ['name', 'currency', 'created_by'];
 
+    protected $hidden = ['invite_token_hash', 'invite_expires_at'];
+
+    protected function casts(): array
+    {
+        return ['invite_expires_at' => 'datetime'];
+    }
+
     public function memberships(): HasMany
     {
         return $this->hasMany(GroupMember::class);

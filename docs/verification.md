@@ -6,16 +6,16 @@ The implementation followed the dependency stages in the specification: runtime/
 
 Backend unit checks cover the corrected three-expense fixture, one payer, two people, custom shares, deterministic remainder allocation, decimal precision, opposing and repeated debts, full cancellation, excluded payer, zero shares, soft deletion, totals above one expense's database precision, and cycles that must retain all payments. Calculation tests require no HTTP requests.
 
-Feature checks exercise stateful registration/login/me/logout, password updates, validation and throttling; creator-only permissions, guest contact emails and legacy-member denial; creator removal/re-addition; group-scoped member and expense IDs; equal and custom expense persistence; atomic replacement and failed-update preservation; denial of non-creator access even for legacy expense authors and payers; former-member debt retention and rejection on new forms; response contracts; sorting and stable ties; and group deletion including soft-deleted expenses.
+Feature checks exercise stateful registration/login/me/logout, password updates, validation and throttling; creator management permissions, invited account claims, expiry/revocation/rotation, claim uniqueness, guest contact emails and legacy-member denial; creator removal/re-addition; group-scoped member and expense IDs; equal and custom expense persistence; atomic replacement and failed-update preservation; denial of unlinked or removed account access even for legacy expense authors and payers; former-member debt retention and rejection on new forms; response contracts; sorting and stable ties; and group deletion including soft-deleted expenses.
 
-Browser acceptance exercises real sessions and CSRF, name-only participants without registration, optional contact emails, atomic group creation with initial member names, equal/custom expenses, validation feedback, details explaining debt, editing/deletion and refreshed balances, former-participant debt retention and denial of non-creator access, password changes/logout, loading/error/retry/empty states, and layouts at 320, 390, 768 and 1440 pixels. Screenshots and failure traces are ignored generated artifacts in `frontend/test-results/`.
+Browser acceptance exercises real sessions and CSRF, name-only participants without registration, optional contact emails, atomic group creation with initial member names, equal/custom expenses, validation feedback, details explaining debt, editing/deletion and refreshed balances, former-participant debt retention and denial of unlinked or removed account access, invitation registration redirect, name selection, email updates, joined-member add/edit expenses, password changes/logout, loading/error/retry/empty states, and layouts at 320, 390, 768 and 1440 pixels. Screenshots and failure traces are ignored generated artifacts in `frontend/test-results/`.
 
 ## Checks completed on 2026-10-02
 
 | Check | Result |
 | --- | --- |
-| PHPUnit, SQLite in memory | 52 tests, 364 assertions passed |
-| PHPUnit, MySQL 8.0.30 isolated test database | 52 tests, 364 assertions passed |
+| PHPUnit, SQLite in memory | 56 tests, 427 assertions passed |
+| PHPUnit, MySQL 8.0.30 isolated test database | 56 tests, 427 assertions passed |
 | Laravel Pint | Passed |
 | Composer schema/lock validation | Passed with `--strict` |
 | Composer locked installation | `composer install` succeeded without dependency changes |
@@ -25,7 +25,7 @@ Browser acceptance exercises real sessions and CSRF, name-only participants with
 | Frontend clean install | `npm ci` succeeded from the committed lockfile |
 | Frontend dependency tree | No unmet peer dependencies (`npm ls --depth=0`) |
 | TypeScript and production build | Passed; generated deployable `frontend/dist/` |
-| Browser acceptance | 3 Chromium tests passed with real Laravel/MySQL sessions |
+| Browser acceptance | 4 Chromium tests passed with real Laravel/MySQL sessions |
 | Responsive checks | No page overflow at 320, 390, 768 and 1440 pixels; mobile/desktop screenshots inspected |
 | Frontend/backend connectivity | `/api/health` passed directly and through the Vite proxy |
 

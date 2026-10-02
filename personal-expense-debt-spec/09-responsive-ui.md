@@ -190,7 +190,7 @@ Use a bottom navigation bar on mobile:
 └─────────────────────────────────┘
 ```
 
-The exact navigation can be adjusted based on UX. The creator sees all management actions. Adding a participant asks for a required name and optional email, explaining that no participant login is needed. Do not display participant leave or account-linking flows.
+The exact navigation can be adjusted based on UX. The creator sees all management actions. Adding a participant asks for a required name and optional email. On Members, the creator can generate/replace/revoke a shareable invitation. Invitees register or log in, return to the invitation and select their existing name. Linked active members see personal balances and can add/edit expenses; group/member settings and deletion remain creator-only. Do not display participant leave flows.
 
 The "Add Expense" action should be easy to access.
 

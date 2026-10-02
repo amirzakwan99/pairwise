@@ -74,7 +74,9 @@ DELETE /api/groups/{group}/expenses/{expense}
 GET    /api/groups/{group}/settlements
 ```
 
-Only the authenticated creator can use the group, member, expense and settlement routes. POST members requires name and accepts optional nullable email. Contact email does not grant access or link an account. There is no participant leave endpoint.
+The creator and active invited accounts can read group/member/expense/settlement routes and add/edit expenses. Only the creator manages members/settings/invitations and deletes expenses/groups. POST members requires name and accepts optional nullable email. Contact email alone does not grant access or link an account. There is no participant leave endpoint.
+
+Invitation routes: POST/DELETE /api/groups/{group}/invitation for creator generation/revocation; authenticated GET /api/invitations/{token} for eligible names; POST /api/invitations/{token}/join with member_id to link an existing guest and update its email. Full payloads, expiry and conflict rules are owned by 03-shared-contracts.md.
 
 Use consistent JSON response formats.
 

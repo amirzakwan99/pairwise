@@ -103,9 +103,9 @@ Expense
 Expense Split
 ```
 
-A registered creator can own multiple groups. Other people are named, group-local participants and need no login account.
+A registered creator can own multiple groups. Other people start as named, group-local participants and can optionally register/log in and join using a creator-issued invitation.
 
-A group contains its registered creator and named participants, with optional contact emails. Only the creator manages the group and expenses.
+A group contains its registered creator and named participants, with optional contact emails. Joined members can view the group and add/edit expenses; only the creator manages the group, members, invitations and deletions.
 
 A group contains multiple expenses.
 

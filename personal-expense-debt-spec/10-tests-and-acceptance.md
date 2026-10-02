@@ -247,7 +247,7 @@ The MVP is complete when:
 1. A user can register/login.
 2. A user can create a group.
 3. The creator can add named participants without email or accounts; contact email is optional.
-4. Only the group creator can add/edit/delete expenses, including expenses paid by named participants.
+4. The creator and active invited accounts can add/edit expenses, including expenses paid by named participants. Only the creator deletes expenses.
 5. A user can select who paid.
 6. A user can select participants.
 7. Equal splits work.
@@ -261,6 +261,6 @@ The MVP is complete when:
 15. Group totals are displayed.
 16. The application works well on mobile screens.
 17. Backend settlement logic has automated tests.
-18. Every non-creator is denied group access and mutations, including legacy registered members, original expense authors and accounts matching optional contact emails.
+18. Unlinked accounts and inactive participants are denied access, including legacy registered members, original expense authors and accounts matching optional contact emails. Test invitation expiry, rotation/revocation, one-time name claims, account-per-group uniqueness, cross-group selection denial, email updates and history preservation.
 19. The application has clear loading, error and empty states.
 20. The project can be run locally using documented instructions.

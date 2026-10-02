@@ -45,7 +45,7 @@ before saving.
 
 ## Source section 17: Editing Expenses
 
-Only the group creator can edit any expense, including legacy expenses authored by someone else.
+The group creator and active accounts linked through an invitation can add/edit any expense, including expenses authored by someone else. Only the creator can delete expenses.
 
 When an expense is edited:
 

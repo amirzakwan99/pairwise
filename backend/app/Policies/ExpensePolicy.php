@@ -11,11 +11,11 @@ class ExpensePolicy
 {
     public function update(User $user, Expense $expense): bool
     {
-        return (new GroupPolicy)->update($user, $expense->group);
+        return (new GroupPolicy)->view($user, $expense->group);
     }
 
     public function delete(User $user, Expense $expense): bool
     {
-        return $this->update($user, $expense);
+        return (new GroupPolicy)->update($user, $expense->group);
     }
 }
