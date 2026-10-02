@@ -10,6 +10,6 @@ class GroupMemberFactory extends Factory
 {
     public function definition(): array
     {
-        return ['group_id' => Group::factory(), 'user_id' => User::factory(), 'role' => 'member', 'left_at' => null];
+        return ['group_id' => Group::factory(), 'user_id' => User::factory()->guest(), 'role' => 'member', 'left_at' => null, 'contact_email' => null];
     }
 }

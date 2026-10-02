@@ -17,7 +17,7 @@ class ExpenseService
     public function save(User $actor, Group $group, array $data, ?string $id = null): Expense
     {
         return $this->groups->locked($group, function (Group $group) use ($actor, $data, $id) {
-            Gate::forUser($actor)->authorize('view', $group);
+            Gate::forUser($actor)->authorize('update', $group);
             $expense = $id ? $group->expenses()->findOrFail($id) : null;
             if ($expense) {
                 Gate::forUser($actor)->authorize('update', $expense);

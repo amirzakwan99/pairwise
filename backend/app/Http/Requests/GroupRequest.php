@@ -16,6 +16,12 @@ class GroupRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['name' => ['required', 'string', 'max:255'], 'currency' => $this->isMethod('post') ? ['sometimes', Rule::in(['MYR'])] : ['prohibited'], 'created_by' => ['prohibited']];
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'currency' => $this->isMethod('post') ? ['sometimes', Rule::in(['MYR'])] : ['prohibited'],
+            'member_names' => $this->isMethod('post') ? ['sometimes', 'array', 'list'] : ['prohibited'],
+            'member_names.*' => ['required', 'string', 'max:255', 'distinct:ignore_case'],
+            'created_by' => ['prohibited'],
+        ];
     }
 }

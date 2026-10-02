@@ -190,7 +190,7 @@ Use a bottom navigation bar on mobile:
 └─────────────────────────────────┘
 ```
 
-The exact navigation can be adjusted based on UX.
+The exact navigation can be adjusted based on UX. The creator sees all management actions. Adding a participant asks for a required name and optional email, explaining that no participant login is needed. Do not display participant leave or account-linking flows.
 
 The "Add Expense" action should be easy to access.
 
@@ -279,3 +279,5 @@ The most important information should be:
 2. Who do I owe?
 3. Who owes me?
 4. Why?
+
+The create-group form includes an optional Member name input with an Add member button and a removable list. Explain that the creator is included automatically and participants need no accounts or emails. Submit all initial names with the group in one atomic request.

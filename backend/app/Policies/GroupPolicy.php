@@ -11,12 +11,13 @@ class GroupPolicy
 {
     public function view(User $user, Group $group): bool
     {
-        return $group->memberships()->where('user_id', $user->id)->whereNull('left_at')->exists();
+        return $this->update($user, $group);
     }
 
     public function update(User $user, Group $group): bool
     {
-        return $group->memberships()->where('user_id', $user->id)->whereNull('left_at')->where('role', 'owner')->exists();
+        return $user->id === $group->created_by
+            && $group->memberships()->where('user_id', $user->id)->whereNull('left_at')->where('role', 'owner')->exists();
     }
 
     public function delete(User $user, Group $group): bool

@@ -20,7 +20,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('groups', GroupController::class);
     Route::get('groups/{group}/members', [GroupController::class, 'members']);
     Route::post('groups/{group}/members', [GroupController::class, 'addMember']);
-    Route::delete('groups/{group}/members/me', [GroupController::class, 'leave']);
     Route::delete('groups/{group}/members/{user}', [GroupController::class, 'removeMember']);
     Route::apiResource('groups.expenses', ExpenseController::class);
     Route::get('groups/{group}/settlements', [SettlementController::class, 'show']);

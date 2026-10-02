@@ -33,7 +33,7 @@ Start here. This folder replaces the single large specification with focused doc
 | --- | --- | --- |
 | 1. Foundation | Scope, architecture and contracts read | Compatible runtimes/packages selected, repository scaffold, lockfiles and frontend/backend connectivity |
 | 2. Schema and calculation core | Foundation and shared contracts | Migrations/models/factories, integer-cent split logic and SettlementService; unit tests pass using the corrected three-expense fixture |
-| 3. Auth and groups | Schema | Sanctum session flow, owner/member policies, email lookup and membership lifecycle; access tests pass |
+| 3. Auth and groups | Schema | Creator Sanctum session flow, creator-only policies, name-only participants with optional contact email and membership lifecycle; access tests pass |
 | 4. Expense and read APIs | Calculation core, auth and groups | Transactional create/edit/delete, summary and settlements; request validation and contract tests pass |
 | 5. React UI | Stable API contracts and backend flows | Forms, group dashboard/history/detail and pairwise settlement screen; mobile and error/loading/empty states verified |
 | 6. Delivery | All MVP flows | Full acceptance checks, production build and accurate local/deployment README |

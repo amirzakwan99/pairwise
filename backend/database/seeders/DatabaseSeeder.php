@@ -16,16 +16,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $people = [];
-        foreach (['Amir', 'Ali', 'Abu'] as $name) {
-            $people[$name] = User::firstOrCreate(['email' => strtolower($name).'@example.test'], ['name' => $name, 'password' => 'password123']);
-        }
+        $people['Amir'] = User::firstOrCreate(['email' => 'amir@example.test'], ['name' => 'Amir', 'password' => 'password123']);
         if (Group::where('created_by', $people['Amir']->id)->where('name', 'Langkawi Trip')->exists()) {
             return;
         }
         $groups = app(GroupService::class);
         $group = $groups->create($people['Amir'], ['name' => 'Langkawi Trip']);
         foreach (['Ali', 'Abu'] as $name) {
-            $groups->add($people['Amir'], $group, $people[$name]->email);
+            $people[$name] = $groups->add($people['Amir'], $group, ['name' => $name])->user;
         }
         $service = app(ExpenseService::class);
         foreach ([['Dinner', '120.00', 'Amir'], ['Grab', '60.00', 'Ali'], ['Drinks', '30.00', 'Abu'], ['Hotel', '300.00', 'Amir']] as [$description, $amount, $payer]) {
@@ -34,7 +32,7 @@ class DatabaseSeeder extends Seeder
                 $data['split_type'] = 'custom';
                 $data['splits'] = [['user_id' => $people['Amir']->id, 'amount' => '150.00'], ['user_id' => $people['Ali']->id, 'amount' => '90.00'], ['user_id' => $people['Abu']->id, 'amount' => '60.00']];
             }
-            $service->save($people[$payer], $group, $data);
+            $service->save($people['Amir'], $group, $data);
         }
     }
 }

@@ -31,8 +31,8 @@ class ExpensesTest extends TestCase
         parent::setUp();
         $this->group = Group::factory()->create();
         $this->owner = User::findOrFail($this->group->created_by);
-        $this->member = User::factory()->create();
-        $this->third = User::factory()->create();
+        $this->member = User::factory()->guest()->create(['name' => 'Ali']);
+        $this->third = User::factory()->guest()->create(['name' => 'Abu']);
         foreach ([$this->member, $this->third] as $user) {
             $this->group->memberships()->create(['user_id' => $user->id, 'role' => 'member']);
         }
@@ -82,10 +82,10 @@ class ExpensesTest extends TestCase
 
     public function test_atomic_edit_delete_recalculate_and_preserve_author(): void
     {
-        $expense = $this->actingAs($this->member)->create(['paid_by' => $this->owner->id]);
+        $expense = $this->create(['paid_by' => $this->member->id]);
         $url = $this->path.'/expenses/'.$expense['id'];
         $custom = $this->payload(['amount' => '100.00', 'split_type' => 'custom', 'participant_ids' => [$this->member->id, $this->third->id], 'splits' => [['user_id' => $this->member->id, 'amount' => '0'], ['user_id' => $this->third->id, 'amount' => '100']]]);
-        $this->patchJson($url, $custom)->assertOk()->assertJsonPath('data.created_by', $this->member->id)->assertJsonCount(2, 'data.splits');
+        $this->patchJson($url, $custom)->assertOk()->assertJsonPath('data.created_by', $this->owner->id)->assertJsonCount(2, 'data.splits');
         $this->getJson($this->path.'/summary')->assertJsonPath('data.total_expenses', '100.00');
         $before = Expense::findOrFail($expense['id'])->load('splits')->toArray();
         $custom['amount'] = '99';
@@ -100,9 +100,9 @@ class ExpensesTest extends TestCase
         $this->getJson($this->path.'/summary')->assertJsonPath('data.total_expenses', '0.00');
     }
 
-    public function test_author_permissions_payer_does_not_grant_edit_and_scoping(): void
+    public function test_creator_only_permissions_payer_does_not_grant_access_and_scoping(): void
     {
-        $expense = $this->actingAs($this->member)->create(['paid_by' => $this->third->id]);
+        $expense = $this->create(['paid_by' => $this->third->id]);
         $url = $this->path.'/expenses/'.$expense['id'];
         $this->actingAs($this->third)->patchJson($url, $this->payload())->assertForbidden();
         $this->deleteJson($url)->assertForbidden();

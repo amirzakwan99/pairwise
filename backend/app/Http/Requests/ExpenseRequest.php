@@ -14,7 +14,7 @@ class ExpenseRequest extends FormRequest
     public function authorize(): bool
     {
         $group = $this->route('group');
-        if (! $this->user()->can('view', $group)) {
+        if (! $this->user()->can('update', $group)) {
             return false;
         }
         if ($id = $this->route('expense')) {

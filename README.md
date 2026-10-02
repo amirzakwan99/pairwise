@@ -1,6 +1,6 @@
 # Pairwise — shared group expenses
 
-A Laravel API and React app for personal groups, built from the MVP specification in `personal-expense-debt-spec/`. Register, create a group, add existing accounts by exact email, and record equal or custom expenses. The dashboard shows expense totals, saved shares, and who pays whom. Owners manage groups and all expenses; members manage expenses they authored.
+A Laravel API and React app for personal groups, built from the MVP specification in `personal-expense-debt-spec/`. Register as a creator, create a group with optional member names (added one at a time), add further participants by name with optional contact email, and record equal or custom expenses. Participants do not need accounts or login. The dashboard shows expense totals, saved shares, and who pays whom. Only the original group creator can access the group and manage its participants and expenses, including expenses paid by other people.
 
 ## Verified versions
 
@@ -43,7 +43,7 @@ cd ../frontend
 npm ci
 ```
 
-On PowerShell use `Copy-Item .env.example .env` and `npm.cmd`. The development seed creates `amir@example.test`, `ali@example.test` and `abu@example.test`, password `password123`, with Langkawi Trip, Dinner, Grab, Drinks and a custom-split Hotel expense. Seed only development databases. Re-running the seed skips an existing Langkawi Trip owned by Amir.
+On PowerShell use `Copy-Item .env.example .env` and `npm.cmd`. The development seed creates owner `amir@example.test` (password `password123`) and name-only participants Ali and Abu, with Langkawi Trip, Dinner, Grab, Drinks and a custom-split Hotel expense. Seed only development databases. Re-running the seed skips an existing Langkawi Trip owned by Amir.
 
 Run in two terminals:
 
@@ -65,6 +65,14 @@ Authentication uses [Sanctum stateful SPA sessions](https://laravel.com/docs/12.
 
 ### This Windows workspace
 
+If the browser reports `ERR_CONNECTION_REFUSED`, start all prepared development services in the background from the repository root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Start-Local.ps1
+```
+
+Then open **http://127.0.0.1:5173**. The launcher reuses running services and starts missing ones in hidden processes, with logs in `.tools/`.
+
 Project-local ignored tools were prepared in `.tools/`: checksum-verified Node 22.23.3, Chromium, a PHP configuration enabling MySQL/SQLite drivers and disabling the pre-existing incompatible SSH extension, and an isolated MySQL data directory on **port 3307**. The current local `.env` points at that database. Global PHP/Node installations were left intact. These machine-specific tools and data are not part of a fresh clone.
 
 To use the prepared tools in a new PowerShell terminal, run from the repository root:
@@ -83,6 +91,12 @@ If the isolated database is stopped, start it in a terminal (adjust the Laragon 
 ```
 
 This isolated development server uses an empty-password local root account. For normal local installation and deployment, use a dedicated database account and the standard setup above. Stop the isolated server with `mysqladmin -h 127.0.0.1 -P 3307 -u root shutdown`.
+
+### Upgrading an existing installation
+
+Run `php artisan migrate` before using name-only participants. The additive migration makes identity email/password nullable and adds membership contact email; it preserves existing IDs, expense shares and debts. Existing registered member rows remain available as historical participants, but only the original group creator can access each group. New participants are always group-local guests, even if their contact email matches a registered account. Guest credentials remain null and cannot authenticate. Registration still requires email and password for creators.
+
+Once guest identities exist, rolling back this migration would require non-null credentials and is intentionally refused. Restore a pre-migration backup if a schema rollback is required; do not delete guests or invent login credentials to force it.
 
 ## Checks
 
@@ -118,7 +132,7 @@ SettlementService accumulates each non-payer share as participant → payer and 
 
 The corrected fixture (Dinner 120 by Amir, Grab 60 by Ali, Drinks 30 by Abu, equal shares) gives Ali → Amir **20.00**, Abu → Amir **30.00**, Abu → Ali **10.00**. Hotel is additional seed data and changes those amounts. Tests keep the corrected fixture separate from the seed.
 
-Leaving/removal marks membership inactive and immediately removes access while preserving historical expenses, splits and debts. Only active members can be selected for a replacement expense. Rejoining reactivates the same row. The owner cannot leave or be removed; ownership transfer is deferred. A group deletion cascades its complete history. Group locks serialize membership and expense writes, and full-form PATCH replaces shares atomically. Expense edit rights come from `created_by`, independently of `paid_by`.
+Creator removal marks participants inactive while preserving historical expenses, shares and debts. Only active participants can be selected on new or replacement expenses. Adding a removed name reactivates the same identity and membership. Duplicate active names are rejected case-insensitively within each group. The creator cannot be removed; ownership transfer is deferred. Participants have no self-service leave flow. A group deletion cascades its complete history. Group locks serialize membership and expense writes, and full-form PATCH replaces shares atomically. Expense access and edit rights belong exclusively to the original group creator, independently of expense authorship or payer. Optional contact emails never link accounts or confer access.
 
 See [the shared contract](personal-expense-debt-spec/03-shared-contracts.md) and [API route map](personal-expense-debt-spec/08-api.md). API resources use `{data: ...}`, except settlements use `{currency, settlements}`. Expense lists support `sort=date|amount|description` and `direction=asc|desc`, with ID tie-breaking.
 

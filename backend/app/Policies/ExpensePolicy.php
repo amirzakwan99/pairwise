@@ -11,9 +11,7 @@ class ExpensePolicy
 {
     public function update(User $user, Expense $expense): bool
     {
-        $policy = new GroupPolicy;
-
-        return $policy->view($user, $expense->group) && ($expense->created_by === $user->id || $policy->update($user, $expense->group));
+        return (new GroupPolicy)->update($user, $expense->group);
     }
 
     public function delete(User $user, Expense $expense): bool

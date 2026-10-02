@@ -74,6 +74,8 @@ DELETE /api/groups/{group}/expenses/{expense}
 GET    /api/groups/{group}/settlements
 ```
 
+Only the authenticated creator can use the group, member, expense and settlement routes. POST members requires name and accepts optional nullable email. Contact email does not grant access or link an account. There is no participant leave endpoint.
+
 Use consistent JSON response formats.
 
 Use proper HTTP status codes.

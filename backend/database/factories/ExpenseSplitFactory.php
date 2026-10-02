@@ -11,7 +11,7 @@ class ExpenseSplitFactory extends Factory
     public function definition(): array
     {
         $expense = Expense::factory()->create();
-        $participant = User::factory()->create();
+        $participant = User::factory()->guest()->create();
         $expense->group->memberships()->create(['user_id' => $participant->id, 'role' => 'member']);
         $expense->splits()->delete();
 

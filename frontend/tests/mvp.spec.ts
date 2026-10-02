@@ -21,7 +21,7 @@ async function login(page: Page, email: string) {
   await expect(page.getByRole('heading', { name: 'Your groups' })).toBeVisible();
 }
 
-test('real sessions, equal/custom expenses, edits, memberships and responsive layouts', async ({ browser }) => {
+test('creator manages name-only participants, guest-paid expenses and responsive layouts', async ({ browser }) => {
   test.setTimeout(120000);
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
@@ -29,31 +29,34 @@ test('real sessions, equal/custom expenses, edits, memberships and responsive la
   page.on('pageerror', error => errors.push(error.message));
   const friendEmail = `friend-${unique}@example.test`;
   const ownerEmail = `owner-${unique}@example.test`;
-  await register(page, 'Friend', friendEmail);
-  await page.goto('/profile');
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Sign in to your space' })).toBeVisible();
   await register(page, 'Owner', ownerEmail);
   await page.getByRole('link', { name: '+ New group' }).click();
   await page.getByLabel('Group name', { exact: true }).fill(`Weekend ${unique}`);
+  await page.getByLabel('Member name (optional)').fill('Friend');
+  await page.getByRole('button', { name: 'Add member', exact: true }).click();
+  await page.getByLabel('Member name (optional)').fill('Temporary');
+  await page.getByLabel('Member name (optional)').press('Enter');
+  await page.getByRole('button', { name: 'Remove Temporary', exact: true }).click();
+  await expect(page.getByRole('list', { name: 'Members to add' })).toHaveText('FriendRemove');
   await page.getByRole('button', { name: 'Create group', exact: true }).click();
   await expect(page.getByRole('heading', { name: `Weekend ${unique}` })).toBeVisible();
   const groupUrl = new URL(page.url()).pathname;
   await page.getByRole('button', { name: 'Members', exact: true }).click();
-  await page.getByLabel('Email address').fill(friendEmail);
-  await page.getByRole('button', { name: 'Add member', exact: true }).click();
+  await expect(page.getByLabel('Email address (optional)')).not.toHaveAttribute('required');
   await expect(page.getByRole('heading', { name: 'Friend', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '+ Add expense', exact: true }).click();
   await page.getByLabel('What was it?').fill('Dinner');
   await page.getByLabel('Amount (RM)', { exact: true }).fill('10.01');
-  await page.getByLabel('Who paid?').selectOption({ label: 'Owner (you)' });
+  await page.getByLabel('Who paid?').selectOption({ label: 'Friend' });
   await page.getByRole('button', { name: 'Save expense', exact: true }).click();
   await expect(page.getByText('Expense added successfully.')).toBeVisible();
   await page.getByRole('link', { name: /Dinner/ }).click();
   await expect(page.getByRole('heading', { name: 'Participants & saved shares' })).toBeVisible();
-  await expect(page.getByText('Friend owes Owner')).toBeVisible();
+  await expect(page.getByText('Owner owes Friend')).toBeVisible();
+  await expect(page.getByText('Added by Owner', { exact: false })).toBeVisible();
   await page.getByRole('link', { name: 'Edit expense', exact: true }).click();
   await page.getByLabel('Custom amounts', { exact: true }).check();
+  await page.getByLabel('Who paid?').selectOption({ label: 'Owner (you)' });
   await page.getByLabel('Owner share (RM)').fill('7.00');
   await page.getByLabel('Friend share (RM)').fill('3.00');
   await page.getByRole('button', { name: 'Save changes', exact: true }).click();
@@ -76,6 +79,12 @@ test('real sessions, equal/custom expenses, edits, memberships and responsive la
   await page.getByRole('link', { name: '+ Add expense', exact: true }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole('link', { name: 'Cancel', exact: true }).click();
+  const friendContext = await browser.newContext();
+  const friend = await friendContext.newPage();
+  await register(friend, 'Friend', friendEmail);
+  await friend.goto(groupUrl);
+  await expect(friend.getByRole('alert')).toContainText('unauthorized');
+  await friendContext.close();
   await page.getByRole('button', { name: 'Members', exact: true }).click();
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Remove', exact: true }).click();
@@ -83,12 +92,6 @@ test('real sessions, equal/custom expenses, edits, memberships and responsive la
   await page.getByRole('button', { name: 'Who owes whom', exact: true }).click();
   await expect(page.getByText('You receive from Friend')).toBeVisible();
 
-  const friendContext = await browser.newContext();
-  const friend = await friendContext.newPage();
-  await login(friend, friendEmail);
-  await friend.goto(groupUrl);
-  await expect(friend.getByRole('alert')).toContainText('unauthorized');
-  await friendContext.close();
   await page.getByRole('button', { name: 'Expenses', exact: true }).click();
   await page.getByRole('link', { name: /Dinner/ }).click();
   page.once('dialog', dialog => dialog.accept());
@@ -96,6 +99,12 @@ test('real sessions, equal/custom expenses, edits, memberships and responsive la
   await expect(page.getByRole('heading', { name: 'No expenses yet' })).toBeVisible();
   await page.getByRole('button', { name: 'Who owes whom', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'All square' })).toBeVisible();
+  await page.getByRole('button', { name: 'Members', exact: true }).click();
+  await page.getByLabel('Name', { exact: true }).fill('Contact friend');
+  await page.getByLabel('Email address (optional)').fill(friendEmail);
+  await page.getByRole('button', { name: 'Add member', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Contact friend', exact: true })).toBeVisible();
+  await expect(page.getByText(friendEmail, { exact: true })).toBeVisible();
   await page.goto('/profile');
   await page.getByLabel('Current password').fill(password);
   await page.getByLabel('New password', { exact: true }).fill('changed123');
@@ -123,7 +132,7 @@ test('CSRF is enforced on real SPA writes and expired sessions have useful feedb
 });
 
 test('loading, empty, retry and validation error states remain actionable', async ({ page }) => {
-  await login(page, 'ali@example.test');
+  await login(page, 'amir@example.test');
   await page.route('**/api/groups', async route => { await new Promise(resolve => setTimeout(resolve, 700)); await route.continue().catch(() => {}); });
   await page.goto('/groups');
   await expect(page.getByRole('status')).toContainText('Loading');

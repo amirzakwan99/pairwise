@@ -17,6 +17,8 @@ created_at
 updated_at
 ```
 
+The users table holds registered creator accounts and guest participant identities. Registered accounts require email/password; guest identities have both null. Optional participant email lives on group_members.contact_email and does not reserve or link an account. All entity IDs remain ULIDs, including guest IDs referenced by expenses and shares.
+
 ## groups
 
 ```text
@@ -40,6 +42,9 @@ MYR
 id
 group_id
 user_id
+role (owner/member)
+left_at (nullable)
+contact_email (nullable)
 created_at
 updated_at
 ```

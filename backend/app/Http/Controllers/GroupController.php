@@ -18,7 +18,7 @@ class GroupController extends Controller
 
     public function index(Request $request)
     {
-        return response()->json(['data' => Group::whereHas('memberships', fn ($q) => $q->where('user_id', $request->user()->id)->whereNull('left_at'))->orderByDesc('created_at')->orderBy('id')->get()]);
+        return response()->json(['data' => Group::where('created_by', $request->user()->id)->whereHas('memberships', fn ($q) => $q->where('user_id', $request->user()->id)->where('role', 'owner')->whereNull('left_at'))->orderByDesc('created_at')->orderBy('id')->get()]);
     }
 
     public function store(GroupRequest $request)
@@ -54,19 +54,12 @@ class GroupController extends Controller
 
     public function addMember(MemberRequest $request, Group $group)
     {
-        return (new MemberResource($this->groups->add($request->user(), $group, $request->validated('email'))))->response()->setStatusCode(201);
+        return (new MemberResource($this->groups->add($request->user(), $group, $request->validated())))->response()->setStatusCode(201);
     }
 
     public function removeMember(Request $request, Group $group, string $user)
     {
         $this->groups->remove($request->user(), $group, $user);
-
-        return response()->noContent();
-    }
-
-    public function leave(Request $request, Group $group)
-    {
-        $this->groups->remove($request->user(), $group, $request->user()->id, true);
 
         return response()->noContent();
     }

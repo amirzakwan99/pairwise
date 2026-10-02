@@ -33,6 +33,16 @@ class UserFactory extends Factory
         ];
     }
 
+    public function guest(): static
+    {
+        return $this->state(fn () => [
+            'email' => null,
+            'email_verified_at' => null,
+            'password' => null,
+            'remember_token' => null,
+        ]);
+    }
+
     /**
      * Indicate that the model's email address should be unverified.
      */

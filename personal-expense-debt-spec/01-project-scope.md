@@ -103,9 +103,9 @@ Expense
 Expense Split
 ```
 
-A user can belong to multiple groups.
+A registered creator can own multiple groups. Other people are named, group-local participants and need no login account.
 
-A group contains multiple users.
+A group contains its registered creator and named participants, with optional contact emails. Only the creator manages the group and expenses.
 
 A group contains multiple expenses.
 

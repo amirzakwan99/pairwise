@@ -13,7 +13,7 @@ class GroupMember extends Model
 {
     use HasFactory, HasUlids;
 
-    protected $fillable = ['group_id', 'user_id', 'role', 'left_at'];
+    protected $fillable = ['group_id', 'user_id', 'role', 'left_at', 'contact_email'];
 
     protected function casts(): array
     {

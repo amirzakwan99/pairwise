@@ -45,7 +45,7 @@ before saving.
 
 ## Source section 17: Editing Expenses
 
-Users with permission should be able to edit an expense.
+Only the group creator can edit any expense, including legacy expenses authored by someone else.
 
 When an expense is edited:
 
@@ -59,7 +59,7 @@ Settlement should preferably be calculated from the source expenses rather than 
 
 ## Source section 18: Deleting Expenses
 
-Allow authorized users to delete expenses.
+Allow only the group creator to delete expenses.
 
 Before deletion:
 

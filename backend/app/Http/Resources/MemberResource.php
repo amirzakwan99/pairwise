@@ -9,6 +9,11 @@ class MemberResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        return ['id' => $this->user_id, 'name' => $this->user->name, 'email' => $this->user->email, 'role' => $this->role, 'active' => $this->left_at === null];
+        return [
+            'id' => $this->user_id, 'name' => $this->user->name,
+            'email' => $this->contact_email ?? $this->user->email,
+            'guest' => $this->user->password === null,
+            'role' => $this->role, 'active' => $this->left_at === null,
+        ];
     }
 }

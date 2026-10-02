@@ -29,6 +29,14 @@ class GroupService
             $group = Group::create(['name' => $data['name'], 'currency' => $data['currency'] ?? 'MYR', 'created_by' => $owner->id]);
             $group->memberships()->create(['user_id' => $owner->id, 'role' => 'owner']);
 
+            foreach ($data['member_names'] ?? [] as $index => $name) {
+                try {
+                    $this->add($owner, $group, ['name' => $name]);
+                } catch (ValidationException $exception) {
+                    throw ValidationException::withMessages(['member_names.'.$index => $exception->errors()['name']]);
+                }
+            }
+
             return $group;
         });
     }
@@ -43,32 +51,34 @@ class GroupService
         });
     }
 
-    public function add(User $actor, Group $group, string $email): GroupMember
+    public function add(User $actor, Group $group, array $data): GroupMember
     {
-        return $this->locked($group, function (Group $group) use ($actor, $email) {
+        return $this->locked($group, function (Group $group) use ($actor, $data) {
             Gate::forUser($actor)->authorize('update', $group);
-            $user = User::where('email', $email)->first();
-            if (! $user || $user->email !== $email) {
-                throw ValidationException::withMessages(['email' => 'No registered account matches this exact email.']);
-            }
-            $existing = $group->memberships()->where('user_id', $user->id)->first();
+            $email = $data['email'] ?? null;
+            $existing = $group->memberships()->with('user')->get()->first(
+                fn ($member) => mb_strtolower($member->user->name) === mb_strtolower($data['name'])
+            );
             if ($existing && $existing->left_at === null) {
-                throw ValidationException::withMessages(['email' => 'This person is already an active member.']);
+                throw ValidationException::withMessages(['name' => 'This name is already an active member of this group.']);
             }
             if ($existing) {
-                $existing->update(['left_at' => null, 'role' => 'member']);
+                $existing->update(['left_at' => null, 'role' => 'member', 'contact_email' => $email ?? $existing->contact_email]);
             } else {
-                $existing = $group->memberships()->create(['user_id' => $user->id, 'role' => 'member']);
+                // A guest is a group-local identity for saved shares, not a login account.
+                // Contact emails live on membership so they cannot reserve/claim a login.
+                $user = User::create(['name' => $data['name'], 'email' => null, 'password' => null]);
+                $existing = $group->memberships()->create(['user_id' => $user->id, 'role' => 'member', 'contact_email' => $email]);
             }
 
             return $existing->load('user');
         });
     }
 
-    public function remove(User $actor, Group $group, string $userId, bool $leaving = false): void
+    public function remove(User $actor, Group $group, string $userId): void
     {
-        $this->locked($group, function (Group $group) use ($actor, $userId, $leaving) {
-            Gate::forUser($actor)->authorize($leaving ? 'view' : 'update', $group);
+        $this->locked($group, function (Group $group) use ($actor, $userId) {
+            Gate::forUser($actor)->authorize('update', $group);
             $membership = $group->memberships()->where('user_id', $userId)->whereNull('left_at')->firstOrFail();
             if ($membership->role === 'owner') {
                 throw ValidationException::withMessages(['member' => 'The owner cannot leave or be removed.']);

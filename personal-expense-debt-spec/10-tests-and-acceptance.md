@@ -236,7 +236,7 @@ Drinks       RM30     Abu
 Hotel        RM300    Amir
 ```
 
-Include different split configurations.
+Include different split configurations. Amir is the sole registered creator; Ali and Abu are name-only guest participants. Amir authors every seeded expense while payer IDs vary.
 
 ---
 
@@ -246,8 +246,8 @@ The MVP is complete when:
 
 1. A user can register/login.
 2. A user can create a group.
-3. A user can add members.
-4. A user can add an expense.
+3. The creator can add named participants without email or accounts; contact email is optional.
+4. Only the group creator can add/edit/delete expenses, including expenses paid by named participants.
 5. A user can select who paid.
 6. A user can select participants.
 7. Equal splits work.
@@ -261,6 +261,6 @@ The MVP is complete when:
 15. Group totals are displayed.
 16. The application works well on mobile screens.
 17. Backend settlement logic has automated tests.
-18. Unauthorized users cannot access another group's data.
+18. Every non-creator is denied group access and mutations, including legacy registered members, original expense authors and accounts matching optional contact emails.
 19. The application has clear loading, error and empty states.
 20. The project can be run locally using documented instructions.

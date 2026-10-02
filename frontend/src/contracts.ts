@@ -3,7 +3,7 @@ export type ID = string;
 export type Money = string;
 export interface User { id: ID; name: string; email: string }
 export interface Group { id: ID; name: string; created_by: ID; currency: 'MYR'; created_at: string; updated_at: string }
-export interface Member extends User { role: 'owner' | 'member'; active: boolean }
+export interface Member extends Omit<User, 'email'> { email: string | null; guest: boolean; role: 'owner' | 'member'; active: boolean }
 export interface Split { user_id: ID; amount: Money }
 export interface Expense {
   id: ID; group_id: ID; created_by: ID; description: string; amount: Money;

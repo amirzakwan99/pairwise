@@ -32,8 +32,8 @@ function ExpenseForm({ group, members, expense }: { group: Group; members: Membe
   const [shares, setShares] = useState<Record<string, string>>(Object.fromEntries(expense?.splits.map(s => [s.user_id, s.amount]) ?? []));
   const action = useAction();
   const navigate = useNavigate();
-  const canEdit = !expense || expense.created_by === session.user!.id || members.some(m => m.id === session.user!.id && m.role === 'owner' && m.active);
-  if (!canEdit) return <div className="card"><h2>You cannot edit this expense.</h2><p className="muted">Only its author or the group owner can change it.</p></div>;
+  const canEdit = group.created_by === session.user!.id && members.some(m => m.id === session.user!.id && m.role === 'owner' && m.active);
+  if (!canEdit) return <div className="card"><h2>You cannot edit this expense.</h2><p className="muted">Only the group creator can change expenses.</p></div>;
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const payload: ExpenseInput = { description, amount, paid_by: payer, expense_date: date, notes: notes || null, split_type: type, participant_ids: participants,
@@ -60,7 +60,7 @@ export function ExpenseDetailPage() {
   }, [groupId, expenseId, session.revision]);
   const data = result.data;
   const name = (id: string) => data?.members.find(m => m.id === id)?.name ?? 'Member';
-  const canEdit = data && (data.expense.created_by === session.user!.id || data.members.some(m => m.id === session.user!.id && m.active && m.role === 'owner'));
+  const canEdit = data && data.members.some(m => m.id === session.user!.id && m.active && m.role === 'owner');
   const remove = () => {
     if (!data || !window.confirm(`Delete ${data.expense.description} — ${rm(data.expense.amount)}? The group settlement will be recalculated.`)) return;
     void action.run(async () => { await api(path, 'DELETE'); session.refresh(); navigate(`/groups/${groupId}?tab=history`, { state: { notice: 'Expense deleted. Balances recalculated.' } }); });
